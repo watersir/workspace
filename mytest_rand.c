@@ -11,6 +11,7 @@
 /* Sudhanshu Patel sudhanshuptl13@gmail.com */
 
 HEAP_SIZE = 20;
+long long int starttime;
 
 struct Heap{
     unsigned int *arr;
@@ -149,7 +150,8 @@ char rand_char(int no){
 
 int write_page(const char * fname, int blkcount, float ratio, FILE * fd_record){
     #ifdef RECORD
-        fprintf(fd_record,"w %s\n",fname);
+        long long int rt = get_relative_utime(starttime);
+        fprintf(fd_record,"w %ld %s\n", rt, fname);
     #endif
     int i, j;
     if(fname == NULL){
@@ -191,7 +193,8 @@ int write_page(const char * fname, int blkcount, float ratio, FILE * fd_record){
 int read_page(const char * fname, int blkcount, FILE * fd_record){
 
     #ifdef RECORD
-        fprintf(fd_record,"r %s\n",fname);
+        long long int rt = get_relative_utime(starttime);
+        fprintf(fd_record,"r %ld %s\n", rt, fname);
     #endif
 
     char buffer[BUF_SIZE];
@@ -263,13 +266,17 @@ int execute(int blkcount, int max_files, Heap *h, FILE * fd_latency, FILE * fd_r
         else{
             latency = get_relative_utime(current);
             if(latency > 0)
-                fprintf(fd_latency,"rm:%ld\n",latency);
+                fprintf(fd_latency,"r:%ld\n",latency);
         }
 
-        // then, delete the file.
+        // then, remove the file.
+        #ifdef RECORD
+            long long int rt = get_relative_utime(starttime);
+            fprintf(fd_record,"rm %ld %s\n", rt, fname_read);
+        #endif
+
         current = get_current_utime();
         latency = 0;
-
         if(remove(fname_read)==-1)
             printf("remove erro.\n");
         else{
@@ -277,10 +284,6 @@ int execute(int blkcount, int max_files, Heap *h, FILE * fd_latency, FILE * fd_r
             if(latency > 0)
                 fprintf(fd_latency,"rm:%ld\n",latency);
         }
-
-        #ifdef RECORD
-            fprintf(fd_record,"rm %s\n",fname_read);
-        #endif
 
     }
     gettimeofday(&end, NULL);
@@ -290,10 +293,11 @@ int execute(int blkcount, int max_files, Heap *h, FILE * fd_latency, FILE * fd_r
     return 0;
 }
 
+
 int main(int arc, char ** argv){
 
     srand ( time(NULL) );
-
+    starttime = get_current_utime();
     /* open latency file */
     FILE * fd_latency = fopen(argv[1],"w");
     /* open record file */
