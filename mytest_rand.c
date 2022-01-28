@@ -314,8 +314,10 @@ int main(int arc, char ** argv){
     /* initial files, size = 10 000 * 4 * 4k = 160M. */
     int nfile = 10000; // !!! nfile must < heap_size
     int blkcount = 4;
+    printf("-----init files------\n");
     initial_files(nfile, blkcount, heap, fd_record); 
 
+    printf("-----execute files------\n");
     /* execute file write */
     int testblkcount = 1; // size = 4*4096
     int max_files = 256*1024;
