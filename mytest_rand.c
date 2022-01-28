@@ -9,14 +9,6 @@
 
 /* for min heap*/
 /* Sudhanshu Patel sudhanshuptl13@gmail.com */
-/*
-Min Heap implementation in c
-*/
-#include<stdio.h>
-#include<stdlib.h>
-/*
- Array Implementation of MinHeap data Structure
-*/
 
 HEAP_SIZE = 20;
 
@@ -132,12 +124,33 @@ void print(Heap *h){
  * 
  */
 #define BUF_SIZE 4096
+#define RECORD
+long long get_current_utime(void)
+{
+	struct timeval current;
+	
+	gettimeofday(&current,NULL);
+	
+	return (current.tv_sec*1000000 + current.tv_usec);	
+}
+
+long long get_relative_utime(long long start)
+{
+	struct timeval current;
+	
+	gettimeofday(&current,NULL);
+	
+	return (current.tv_sec*1000000 + current.tv_usec - start);		
+}
 
 char rand_char(int no){
     return 'A' + no;
 }
 
-int write_page(const char * fname, int blkcount, float ratio){
+int write_page(const char * fname, int blkcount, float ratio, int fd_record){
+    #ifdef RECORD
+        fprintf(fd_record,"w %s\n",fname);
+    #endif
     int i, j;
     if(fname == NULL){
         printf("arg error\n");
@@ -175,7 +188,12 @@ int write_page(const char * fname, int blkcount, float ratio){
     close(fd);
 }
 
-int read_page(const char * fname, int blkcount){
+int read_page(const char * fname, int blkcount, int fd_record){
+
+    #ifdef RECORD
+        fprintf(fd_record,"r %s\n",fname);
+    #endif
+
     char buffer[BUF_SIZE];
     int i;
     if(fname == NULL){
@@ -194,7 +212,6 @@ int read_page(const char * fname, int blkcount){
 int initial_files(int nfile, int blkcount, Heap *h){
     unsigned int file_id;
     for(int i = 0; i < nfile; i++){ 
-        srand ( time(NULL) );
         file_id = random();
         char name[30] = {'\0'}; 
         sprintf(name, "%d", file_id);
@@ -204,12 +221,15 @@ int initial_files(int nfile, int blkcount, Heap *h){
     }
     return 0;
 }
-int execute(int blkcount, int max_files, Heap *h) {
+int execute(int blkcount, int max_files, Heap *h, int fd_latency, int fd_record) {
 
-    float ratio = -1;
+    float ratio = 0.5;
     unsigned int file_id;
     long long delta_time;
     struct timeval start, end;
+    long long current;
+    long long latency;
+
     gettimeofday(&start, NULL);
     for(int i = 0; i < max_files; i++){
 
@@ -217,16 +237,50 @@ int execute(int blkcount, int max_files, Heap *h) {
         file_id = random();
         char fname[30] = {'\0'};
         sprintf(fname,"%d",file_id);
-        if(write_page(fname,blkcount,ratio) == -1)
+
+        current = get_current_utime();
+        latency = 0;
+        if(write_page(fname,blkcount,ratio,fd_record) == -1)
             return 0;
+        else{
+            latency = get_relative_utime(current);
+            if(latency > 0)
+                fprintf(fd_latency,"w:%ld",latency);
+        }
+
+
         insert(h, file_id);
 
-        // delete a file.
+        // read a file.
         file_id = PopMin(h);
         char fname_read[30] = {'\0'};
         sprintf(fname_read,"%d",file_id);
+
+        current = get_current_utime();
+        latency = 0;
+        if(read_page(fname_read,blkcount,fd_record)==-1)
+            printf("read erro.\n");
+        else{
+            latency = get_relative_utime(current);
+            if(latency > 0)
+                fprintf(fd_latency,"rm:%ld",latency);
+        }
+
+        // then, delete the file.
+        current = get_current_utime();
+        latency = 0;
+
         if(remove(fname_read)==-1)
             printf("remove erro.\n");
+        else{
+            latency = get_relative_utime(current);
+            if(latency > 0)
+                fprintf(fd_latency,"rm:%ld",latency);
+        }
+
+        #ifdef RECORD
+            fprintf(fd_record,"rm %s\n",fname_read);
+        #endif
 
     }
     gettimeofday(&end, NULL);
@@ -236,9 +290,10 @@ int execute(int blkcount, int max_files, Heap *h) {
     return 0;
 }
 
-int main(){
+int main(int arc, char * argv){
 
     srand ( time(NULL) );
+
     /* create a heap */
     int heap_size = 11000;
     Heap *heap = CreateHeap(heap_size, 0); //Min Heap
@@ -247,14 +302,24 @@ int main(){
         return -1;
     }
 
-    /* create a heap */
-    int nfile = 10000;
+    /* initial files */
+    int nfile = 10000; // !!! nfile must < heap_size
     int blkcount = 4;
     initial_files(nfile, blkcount, heap);
 
+    /* open latency file */
+    int fd_latency = open(argv[1],O_RDWR | O_CREAT, 0666);
+    /* open record file */
+    int fd_record = open(argv[2],O_RDWR | O_CREAT, 0666);
+
+    /* execute file write */
     int testblkcount = 4; // size = 4*4096
     int max_files = 1024*1024;
-    execute(testblkcount,max_files,heap);
+    execute(testblkcount,max_files,heap,fd_latency);
+
+    /* close latency file */
+    close(fd_latency);
+    close(fd_record);
 
     return 0;
 }
