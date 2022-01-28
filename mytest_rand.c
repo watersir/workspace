@@ -209,13 +209,13 @@ int read_page(const char * fname, int blkcount, int fd_record){
     }
     close(fd);
 }
-int initial_files(int nfile, int blkcount, Heap *h){
+int initial_files(int nfile, int blkcount, Heap *h, int fd_record){
     unsigned int file_id;
     for(int i = 0; i < nfile; i++){ 
         file_id = random();
         char name[30] = {'\0'}; 
         sprintf(name, "%d", file_id);
-        if(write_page(name, blkcount, -1)==-1)
+        if(write_page(name, blkcount, -1, fd_record)==-1)
             return -1;
         insert(h, file_id);
     }
@@ -294,6 +294,11 @@ int main(int arc, char * argv){
 
     srand ( time(NULL) );
 
+    /* open latency file */
+    int fd_latency = open(argv[1],O_RDWR | O_CREAT, 0666);
+    /* open record file */
+    int fd_record = open(argv[2],O_RDWR | O_CREAT, 0666);
+
     /* create a heap */
     int heap_size = 11000;
     Heap *heap = CreateHeap(heap_size, 0); //Min Heap
@@ -305,12 +310,7 @@ int main(int arc, char * argv){
     /* initial files, size = 10 000 * 4 * 4k = 160M. */
     int nfile = 10000; // !!! nfile must < heap_size
     int blkcount = 4;
-    initial_files(nfile, blkcount, heap); 
-
-    /* open latency file */
-    int fd_latency = open(argv[1],O_RDWR | O_CREAT, 0666);
-    /* open record file */
-    int fd_record = open(argv[2],O_RDWR | O_CREAT, 0666);
+    initial_files(nfile, blkcount, heap, fd_record); 
 
     /* execute file write */
     int testblkcount = 4; // size = 4*4096
