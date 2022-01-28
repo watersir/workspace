@@ -124,7 +124,7 @@ void print(Heap *h){
  * 
  */
 #define BUF_SIZE 4096
-#define RECORD
+//#define RECORD
 long long get_current_utime(void)
 {
 	struct timeval current;
