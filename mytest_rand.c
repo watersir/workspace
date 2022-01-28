@@ -248,7 +248,7 @@ int execute(int blkcount, int max_files, Heap *h, FILE * fd_latency, FILE * fd_r
         else{
             latency = get_relative_utime(current);
             if(latency > 0)
-                fprintf(fd_latency,"w:%ld\n",latency);
+                fprintf(fd_latency,"w %ld\n",latency);
         }
 
 
@@ -266,7 +266,7 @@ int execute(int blkcount, int max_files, Heap *h, FILE * fd_latency, FILE * fd_r
         else{
             latency = get_relative_utime(current);
             if(latency > 0)
-                fprintf(fd_latency,"r:%ld\n",latency);
+                fprintf(fd_latency,"r %ld\n",latency);
         }
 
         // then, remove the file.
@@ -282,7 +282,7 @@ int execute(int blkcount, int max_files, Heap *h, FILE * fd_latency, FILE * fd_r
         else{
             latency = get_relative_utime(current);
             if(latency > 0)
-                fprintf(fd_latency,"rm:%ld\n",latency);
+                fprintf(fd_latency,"rm %ld\n",latency);
         }
 
     }
