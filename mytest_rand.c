@@ -186,7 +186,7 @@ int write_page(const char * fname, int blkcount, float ratio, FILE * fd_record){
             return -1;
         }
     }
-	fsync(fd);
+//	fsync(fd);
     close(fd);
 }
 int write_append(const char * fname, int blkcount, float ratio, FILE * fd_record){
@@ -229,7 +229,7 @@ int write_append(const char * fname, int blkcount, float ratio, FILE * fd_record
             return -1;
         }
     }
-	fsync(fd);
+//	fsync(fd);
     close(fd);
 }
 int read_page(const char * fname, int blkcount, FILE * fd_record){
