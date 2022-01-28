@@ -124,7 +124,7 @@ void print(Heap *h){
  * 
  */
 #define BUF_SIZE 4096
-//#define RECORD
+#define RECORD
 long long get_current_utime(void)
 {
 	struct timeval current;
@@ -147,7 +147,7 @@ char rand_char(int no){
     return 'A' + no;
 }
 
-int write_page(const char * fname, int blkcount, float ratio, int fd_record){
+int write_page(const char * fname, int blkcount, float ratio, FILE * fd_record){
     #ifdef RECORD
         fprintf(fd_record,"w %s\n",fname);
     #endif
@@ -188,7 +188,7 @@ int write_page(const char * fname, int blkcount, float ratio, int fd_record){
     close(fd);
 }
 
-int read_page(const char * fname, int blkcount, int fd_record){
+int read_page(const char * fname, int blkcount, FILE * fd_record){
 
     #ifdef RECORD
         fprintf(fd_record,"r %s\n",fname);
@@ -209,7 +209,7 @@ int read_page(const char * fname, int blkcount, int fd_record){
     }
     close(fd);
 }
-int initial_files(int nfile, int blkcount, Heap *h, int fd_record){
+int initial_files(int nfile, int blkcount, Heap *h, FILE * fd_record){
     unsigned int file_id;
     for(int i = 0; i < nfile; i++){ 
         file_id = random();
@@ -221,7 +221,7 @@ int initial_files(int nfile, int blkcount, Heap *h, int fd_record){
     }
     return 0;
 }
-int execute(int blkcount, int max_files, Heap *h, FILE * fd_latency, int fd_record) {
+int execute(int blkcount, int max_files, Heap *h, FILE * fd_latency, FILE * fd_record) {
 
     float ratio = 0.5;
     unsigned int file_id;
@@ -297,7 +297,7 @@ int main(int arc, char ** argv){
     /* open latency file */
     FILE * fd_latency = fopen(argv[1],"w");
     /* open record file */
-    int fd_record = open(argv[2],O_RDWR | O_CREAT, 0666);
+    FILE * fd_record = open(argv[2],O_RDWR | O_CREAT, 0666);
 
     /* create a heap */
     int heap_size = 11000;
@@ -313,13 +313,13 @@ int main(int arc, char ** argv){
     initial_files(nfile, blkcount, heap, fd_record); 
 
     /* execute file write */
-    int testblkcount = 4; // size = 4*4096
-    int max_files = 1024*1024;
+    int testblkcount = 1; // size = 4*4096
+    int max_files = 256*1024;
     execute(testblkcount,max_files,heap,fd_latency,fd_record);
 
     /* close latency file */
     fclose(fd_latency);
-    close(fd_record);
+    fclose(fd_record);
 
     return 0;
 }
