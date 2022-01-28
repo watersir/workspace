@@ -221,7 +221,7 @@ int initial_files(int nfile, int blkcount, Heap *h, int fd_record){
     }
     return 0;
 }
-int execute(int blkcount, int max_files, Heap *h, int fd_latency, int fd_record) {
+int execute(int blkcount, int max_files, Heap *h, FILE * fd_latency, int fd_record) {
 
     float ratio = 0.5;
     unsigned int file_id;
@@ -245,7 +245,7 @@ int execute(int blkcount, int max_files, Heap *h, int fd_latency, int fd_record)
         else{
             latency = get_relative_utime(current);
             if(latency > 0)
-                fprintf(fd_latency,"w:%ld",latency);
+                fprintf(fd_latency,"w:%ld\n",latency);
         }
 
 
@@ -263,7 +263,7 @@ int execute(int blkcount, int max_files, Heap *h, int fd_latency, int fd_record)
         else{
             latency = get_relative_utime(current);
             if(latency > 0)
-                fprintf(fd_latency,"rm:%ld",latency);
+                fprintf(fd_latency,"rm:%ld\n",latency);
         }
 
         // then, delete the file.
@@ -275,7 +275,7 @@ int execute(int blkcount, int max_files, Heap *h, int fd_latency, int fd_record)
         else{
             latency = get_relative_utime(current);
             if(latency > 0)
-                fprintf(fd_latency,"rm:%ld",latency);
+                fprintf(fd_latency,"rm:%ld\n",latency);
         }
 
         #ifdef RECORD
@@ -295,7 +295,7 @@ int main(int arc, char ** argv){
     srand ( time(NULL) );
 
     /* open latency file */
-    int fd_latency = open(argv[1],O_RDWR | O_CREAT, 0666);
+    FILE * fd_latency = fopen(argv[1],"w");
     /* open record file */
     int fd_record = open(argv[2],O_RDWR | O_CREAT, 0666);
 
@@ -318,7 +318,7 @@ int main(int arc, char ** argv){
     execute(testblkcount,max_files,heap,fd_latency,fd_record);
 
     /* close latency file */
-    close(fd_latency);
+    fclose(fd_latency);
     close(fd_record);
 
     return 0;
