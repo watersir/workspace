@@ -297,7 +297,7 @@ int main(int arc, char ** argv){
     /* open latency file */
     FILE * fd_latency = fopen(argv[1],"w");
     /* open record file */
-    FILE * fd_record = open(argv[2],O_RDWR | O_CREAT, 0666);
+    FILE * fd_record = fopen(argv[2],"w");
 
     /* create a heap */
     int heap_size = 11000;
