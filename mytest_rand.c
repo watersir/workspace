@@ -302,10 +302,10 @@ int main(int arc, char * argv){
         return -1;
     }
 
-    /* initial files */
+    /* initial files, size = 10 000 * 4 * 4k = 160M. */
     int nfile = 10000; // !!! nfile must < heap_size
     int blkcount = 4;
-    initial_files(nfile, blkcount, heap);
+    initial_files(nfile, blkcount, heap); 
 
     /* open latency file */
     int fd_latency = open(argv[1],O_RDWR | O_CREAT, 0666);
@@ -315,7 +315,7 @@ int main(int arc, char * argv){
     /* execute file write */
     int testblkcount = 4; // size = 4*4096
     int max_files = 1024*1024;
-    execute(testblkcount,max_files,heap,fd_latency);
+    execute(testblkcount,max_files,heap,fd_latency,fd_record);
 
     /* close latency file */
     close(fd_latency);
