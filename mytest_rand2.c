@@ -9,9 +9,16 @@
 
 /* for min heap*/
 /* Sudhanshu Patel sudhanshuptl13@gmail.com */
+/*
+Min Heap implementation in c
+*/
+#include<stdio.h>
+#include<stdlib.h>
+/*
+ Array Implementation of MinHeap data Structure
+*/
 
 HEAP_SIZE = 20;
-long long int starttime;
 
 struct Heap{
     unsigned int *arr;
@@ -125,34 +132,12 @@ void print(Heap *h){
  * 
  */
 #define BUF_SIZE 4096
-#define RECORD
-long long get_current_utime(void)
-{
-	struct timeval current;
-	
-	gettimeofday(&current,NULL);
-	
-	return (current.tv_sec*1000000 + current.tv_usec);	
-}
-
-long long get_relative_utime(long long start)
-{
-	struct timeval current;
-	
-	gettimeofday(&current,NULL);
-	
-	return (current.tv_sec*1000000 + current.tv_usec - start);		
-}
 
 char rand_char(int no){
     return 'A' + no;
 }
 
-int write_page(const char * fname, int blkcount, float ratio, FILE * fd_record){
-    #ifdef RECORD
-        long long int rt = get_relative_utime(starttime);
-        fprintf(fd_record,"w %ld %s\n", rt, fname);
-    #endif
+int write_page(const char * fname, int blkcount, float ratio){
     int i, j;
     if(fname == NULL){
         printf("arg error\n");
@@ -189,13 +174,36 @@ int write_page(const char * fname, int blkcount, float ratio, FILE * fd_record){
 	fsync(fd);
     close(fd);
 }
-int write_append(const char * fname, int blkcount, float ratio, FILE * fd_record){
+int read_page(const char * fname, int blkcount){
+    char buffer[BUF_SIZE];
+    int i;
+    if(fname == NULL){
+        printf("arg error\n");
+        return -1;
+    }
+    int fd = open(fname, O_RDWR);
+    for(i = 0; i < blkcount; i++){
+        if(read(fd, buffer, BUF_SIZE) == -1){
+            printf("error error\n");
+            return -1;
+        }
+    }
+    close(fd);
+}
+int initial_files(int nfile, int blkcount, Heap *h){
 
-    #ifdef RECORD
-        long long int rt = get_relative_utime(starttime);
-        fprintf(fd_record,"w %ld %s\n", rt, fname);
-    #endif
-    
+    unsigned int file_id;
+    for(int i = 0; i < nfile; i++){ 
+        file_id = random();
+        char name[30] = {'\0'}; 
+        sprintf(name, "%d", file_id);
+        if(write_page(name, blkcount, -1)==-1)
+            return -1;
+        insert(h, file_id);
+    }
+    return 0;
+}
+int write_append(const char * fname, int blkcount, float ratio){
     int i, j;
     if(fname == NULL){
         printf("arg error\n");
@@ -232,107 +240,37 @@ int write_append(const char * fname, int blkcount, float ratio, FILE * fd_record
 	fsync(fd);
     close(fd);
 }
-int read_page(const char * fname, int blkcount, FILE * fd_record){
 
-    #ifdef RECORD
-        long long int rt = get_relative_utime(starttime);
-        fprintf(fd_record,"r %ld %s\n", rt, fname);
-    #endif
+int execute(int blkcount, int max_files, Heap *h) {
 
-    char buffer[BUF_SIZE];
-    int i;
-    if(fname == NULL){
-        printf("arg error\n");
-        return -1;
-    }
-    int fd = open(fname, O_RDWR);
-    for(i = 0; i < blkcount; i++){
-        if(read(fd, buffer, BUF_SIZE) == -1){
-            printf("error error\n");
-            return -1;
-        }
-    }
-    close(fd);
-}
-int initial_files(int nfile, int blkcount, Heap *h, FILE * fd_record){
-    unsigned int file_id;
-    for(int i = 0; i < nfile; i++){ 
-        file_id = random();
-        char name[30] = {'\0'}; 
-        sprintf(name, "%d", file_id);
-        if(write_page(name, blkcount, -1, fd_record)==-1)
-            return -1;
-        insert(h, file_id);
-    }
-    return 0;
-}
-int execute(int blkcount, int max_files, Heap *h, FILE * fd_latency, FILE * fd_record) {
-
-    float ratio = 0.5;
+    float ratio = -1;
     unsigned int file_id;
     long long delta_time;
     struct timeval start, end;
-    long long current;
-    long long latency;
-
     gettimeofday(&start, NULL);
     for(int i = 0; i < max_files; i++){
-
-        // rewrite a file.
-        file_id = random() % 100;
-        char fname_append[30] = {'\0'};
-        sprintf(fname_append,"%d.append",file_id);
-        if(write_append(fname_append,1,ratio,fd_record) == -1)
-            return 0;
 
         // write a file.
         file_id = random();
         char fname[30] = {'\0'};
         sprintf(fname,"%d",file_id);
-
-        current = get_current_utime();
-        latency = 0;
-        if(write_page(fname,blkcount,ratio,fd_record) == -1)
+        if(write_page(fname,blkcount,ratio) == -1)
             return 0;
-        else{
-            latency = get_relative_utime(current);
-            if(latency > 0)
-                fprintf(fd_latency,"w %ld\n",latency);
-        }
-
-
         insert(h, file_id);
 
-        // read a file.
+        // rewrite a file.
+        file_id = random() % 100;
+        char fname_append[30] = {'\0'};
+        sprintf(fname_append,"%d.append",file_id);
+        if(write_append(fname_append,1,ratio) == -1)
+            return 0;
+
+        // delete a file.
         file_id = PopMin(h);
         char fname_read[30] = {'\0'};
         sprintf(fname_read,"%d",file_id);
-
-        current = get_current_utime();
-        latency = 0;
-        if(read_page(fname_read,blkcount,fd_record)==-1)
-            printf("read erro.\n");
-        else{
-            latency = get_relative_utime(current);
-            if(latency > 0)
-                fprintf(fd_latency,"r %ld\n",latency);
-        }
-
-        // then, remove the file.
-        #ifdef RECORD
-            long long int rt = get_relative_utime(starttime);
-            fprintf(fd_record,"rm %ld %s\n", rt, fname_read);
-        #endif
-
-        current = get_current_utime();
-        latency = 0;
         if(remove(fname_read)==-1)
             printf("remove erro.\n");
-        else{
-            latency = get_relative_utime(current);
-            if(latency > 0)
-                fprintf(fd_latency,"rm %ld\n",latency);
-        }
 
     }
     gettimeofday(&end, NULL);
@@ -342,15 +280,7 @@ int execute(int blkcount, int max_files, Heap *h, FILE * fd_latency, FILE * fd_r
     return 0;
 }
 
-
-int main(int arc, char ** argv){
-
-    srand ( time(NULL) );
-    starttime = get_current_utime();
-    /* open latency file */
-    FILE * fd_latency = fopen(argv[1],"w");
-    /* open record file */
-    FILE * fd_record = fopen(argv[2],"w");
+int main(){
 
     /* create a heap */
     int heap_size = 11000;
@@ -360,31 +290,26 @@ int main(int arc, char ** argv){
         return -1;
     }
 
+    srand ( time(NULL) );
+
+    /* create fileset */
+    int nfile = 10000;
+    int blkcount = 4;
+    initial_files(nfile, blkcount, heap);
+    
     /* create appendwrite file */
     printf("-- create append write file. --\n");
     for(int i = 0; i < 100; i++){ 
         char name[30] = {'\0'}; 
-        sprintf(name, "%d.appendfile", i);
-        if(write_page(name, 1, -1, fd_record)==-1)
+        sprintf(name, "%d.append", i);
+        if(write_page(name, 1, -1)==-1)
             return -1;
     }
     printf("-- create append write file down. --\n");
 
-    /* initial files, size = 10 000 * 4 * 4k = 160M. */
-    int nfile = 10000; // !!! nfile must < heap_size
-    int blkcount = 1;
-    printf("-----init files------\n");
-    initial_files(nfile, blkcount, heap, fd_record); 
-
-    printf("-----execute files------\n");
-    /* execute file write */
-    int testblkcount = 1; // size = 4*4096
-    int max_files = 256*1024;
-    execute(testblkcount,max_files,heap,fd_latency,fd_record);
-
-    /* close latency file */
-    fclose(fd_latency);
-    fclose(fd_record);
+    int testblkcount = 4; // size = 4*4096
+    int max_files = 1024*256;
+    execute(testblkcount,max_files,heap);
 
     return 0;
 }
