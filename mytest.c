@@ -27,7 +27,6 @@ int write_page(const char * fname, int blkcount, float ratio){
 
         if(ratio > 0) {
             char lastch = 'a';
-
             for (j = 0; j < BUF_SIZE; j++) {
                 float ra = (float) rand() / RAND_MAX;
                 if (ra > ratio) {
@@ -77,10 +76,10 @@ int main(int argc, char* argv[]){
     gettimeofday(&start, NULL);
     for(int i = 0; i < max_files; i++){
         char fname[20] = {'\0'};
-	sprintf(fname,"%d",i);
+	    sprintf(fname,"%d",i);
         if(write_page(fname,blkcount,ratio) == -1)
             return 0;
-	remove(fname);
+	    remove(fname);
     }
     gettimeofday(&end, NULL);
     delta_time = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000;
