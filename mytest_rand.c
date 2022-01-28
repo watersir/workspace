@@ -290,7 +290,7 @@ int execute(int blkcount, int max_files, Heap *h, int fd_latency, int fd_record)
     return 0;
 }
 
-int main(int arc, char * argv){
+int main(int arc, char ** argv){
 
     srand ( time(NULL) );
 
